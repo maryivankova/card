@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maryia Ivankova — Executive Partners</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #F96167 0%, #F9617A 30%, #E8508A 60%, #FF69B4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    padding: 24px 16px;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.13);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 28px;
+    padding: 40px 32px 36px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+
+  .avatar {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 2.5px solid rgba(255,255,255,0.6);
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    color: white;
+    font-weight: 600;
+    letter-spacing: -1px;
+  }
+
+  .name {
+    font-size: 26px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+    margin-bottom: 6px;
+  }
+
+  .title {
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 28px;
+    font-style: italic;
+  }
+
+  .divider {
+    height: 1px;
+    background: rgba(255,255,255,0.2);
+    margin: 0 0 24px;
+  }
+
+  .contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+    text-align: left;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 14px;
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .contact-item:hover {
+    background: rgba(255,255,255,0.22);
+  }
+
+  .contact-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .contact-info {
+    flex: 1;
+  }
+
+  .contact-label {
+    font-size: 10px;
+    color: rgba(255,255,255,0.65);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 1px;
+  }
+
+  .contact-value {
+    font-size: 14px;
+    color: #fff;
+    font-weight: 500;
+  }
+
+  .btn-save {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: #fff;
+    color: #F96167;
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    margin-bottom: 20px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    letter-spacing: -0.2px;
+  }
+
+  .btn-save:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+  }
+
+  .btn-save:active {
+    transform: translateY(0);
+  }
+
+  .qr-section {
+    margin-top: 4px;
+  }
+
+  .qr-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #qrcode {
+    display: flex;
+    justify-content: center;
+  }
+
+  #qrcode canvas, #qrcode img {
+    border-radius: 12px;
+    padding: 10px;
+    background: white;
+  }
+
+  .footer-text {
+    font-size: 10px;
+    color: rgba(255,255,255,0.45);
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="avatar">MI</div>
+  <div class="name">Maryia Ivankova</div>
+  <div class="title">Executive Partners</div>
+  <div class="subtitle">AI Transformation | Process Excellence</div>
+
+  <div class="divider"></div>
+
+  <div class="contacts">
+
+    <a class="contact-item" href="tel:+375298967079">
+      <div class="contact-icon">📞</div>
+      <div class="contact-info">
+        <div class="contact-label">Phone (BY)</div>
+        <div class="contact-value">+375 29 896 70 79</div>
+      </div>
+    </a>
+
+    <a class="contact-item" href="tel:+905441753108">
+      <div class="contact-icon">📱</div>
+      <div class="contact-info">
+        <div class="contact-label">Phone (TR)</div>
+        <div class="contact-value">+90 544 175 31 08</div>
+      </div>
+    </a>
+
+    <a class="contact-item" href="mailto:maryia.ivankova@gmail.com">
+      <div class="contact-icon">✉️</div>
+      <div class="contact-info">
+        <div class="contact-label">Email</div>
+        <div class="contact-value">maryia.ivankova@gmail.com</div>
+      </div>
+    </a>
+
+    <a class="contact-item" href="https://t.me/ivmaryia" target="_blank">
+      <div class="contact-icon">✈️</div>
+      <div class="contact-info">
+        <div class="contact-label">Telegram</div>
+        <div class="contact-value">@ivmaryia</div>
+      </div>
+    </a>
+
+    <a class="contact-item" href="https://wa.me/905441753108" target="_blank">
+      <div class="contact-icon">💬</div>
+      <div class="contact-info">
+        <div class="contact-label">WhatsApp</div>
+        <div class="contact-value">+90 544 175 31 08</div>
+      </div>
+    </a>
+
+    <a class="contact-item" href="https://docs.google.com/presentation/d/1zkWXFTNrja5AOzEZtIJYae9QeSrLgDxc/edit" target="_blank">
+      <div class="contact-icon">📊</div>
+      <div class="contact-info">
+        <div class="contact-label">Presentation</div>
+        <div class="contact-value">Executive Partners Deck</div>
+      </div>
+    </a>
+
+  </div>
+
+  <a class="btn-save" href="#" onclick="saveContact(); return false;">
+    💾 Save Contact
+  </a>
+
+  <div class="qr-section">
+    <div class="qr-label">Scan to open on another device</div>
+    <div id="qrcode"></div>
+    <div class="footer-text">Executive Partners · AI Transformation | Process Excellence</div>
+  </div>
+</div>
+
+<script>
+// Generate QR code pointing to this page
+// When hosted, replace with actual URL
+const pageUrl = window.location.href.includes('localhost') || window.location.href.startsWith('file:')
+  ? 'https://maryivankova.github.io/card'
+  : window.location.href;
+
+new QRCode(document.getElementById("qrcode"), {
+  text: pageUrl,
+  width: 140,
+  height: 140,
+  colorDark: "#2B2B2B",
+  colorLight: "#ffffff",
+  correctLevel: QRCode.CorrectLevel.M
+});
+
+// vCard generator
+function saveContact() {
+  const vcard = [
+    'BEGIN:VCARD',
+    'VERSION:3.0',
+    'N:Ivankova;Maryia;;;',
+    'FN:Maryia Ivankova',
+    'ORG:Executive Partners',
+    'TITLE:AI Transformation | Process Excellence',
+    'TEL;TYPE=CELL,PREF:+375298967079',
+    'TEL;TYPE=CELL:+905441753108',
+    'EMAIL;TYPE=INTERNET:maryia.ivankova@gmail.com',
+    'URL;TYPE=Telegram:https://t.me/ivmaryia',
+    'URL;TYPE=WhatsApp:https://wa.me/905441753108',
+    'URL;TYPE=Presentation:https://docs.google.com/presentation/d/1zkWXFTNrja5AOzEZtIJYae9QeSrLgDxc/edit',
+    'NOTE:Executive Partners | AI Transformation | Process Excellence | From audit to implementation',
+    'END:VCARD'
+  ].join('\r\n');
+
+  const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  // iOS Safari needs a different approach
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  if (isIOS) {
+    // On iOS, open in new tab — Safari handles .vcf natively
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Maryia_Ivankova.vcf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Maryia_Ivankova.vcf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+}
+</script>
+
+</body>
+</html>
