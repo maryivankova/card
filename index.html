@@ -286,18 +286,39 @@
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="closePopup(event)">
+<div class="overlay" id="overlay">
   <div class="contact-card-popup">
-    <div class="popup-check">✓</div>
-    <div class="popup-saved">Контакт сохранён</div>
-    <div class="popup-name">Maryia Ivankova</div>
-    <div class="popup-role">Executive Partners · AI Transformation</div>
-    <div class="popup-divider"></div>
-    <div class="popup-row"><span class="popup-row-icon">📞</span> +375 29 896 70 79</div>
-    <div class="popup-row"><span class="popup-row-icon">📱</span> +90 544 175 31 08</div>
-    <div class="popup-row"><span class="popup-row-icon">✉️</span> maryia.ivankova@gmail.com</div>
-    <div class="popup-row"><span class="popup-row-icon">✈️</span> @ivmaryia · Telegram</div>
-    <button class="popup-close" onclick="closePopup()">Готово</button>
+
+    <!-- Step 1: Open the file -->
+    <div id="step1">
+      <div class="popup-check">⬆️</div>
+      <div class="popup-saved">Step 1 of 2</div>
+      <div class="popup-name" style="font-size:18px;margin-bottom:8px;">Tap <b style="color:#F96167">"Open"</b> above</div>
+      <div class="popup-role" style="margin-bottom:16px;">Then select <b>"Import to Contacts"</b> — your phone will save the contact automatically</div>
+      <div class="popup-divider"></div>
+      <div class="popup-row"><span class="popup-row-icon">👤</span> Maryia Ivankova</div>
+      <div class="popup-row"><span class="popup-row-icon">📞</span> +375 29 896 70 79</div>
+      <div class="popup-row"><span class="popup-row-icon">📱</span> +90 544 175 31 08</div>
+      <div class="popup-row"><span class="popup-row-icon">✉️</span> maryia.ivankova@gmail.com</div>
+      <div class="popup-row"><span class="popup-row-icon">✈️</span> @ivmaryia · Telegram</div>
+      <button class="popup-close" onclick="showStep2()">Done, contact saved →</button>
+    </div>
+
+    <!-- Step 2: Confirmation -->
+    <div id="step2" style="display:none;">
+      <div class="popup-check" style="font-size:28px;">✅</div>
+      <div class="popup-saved">Contact Saved!</div>
+      <div class="popup-name">Maryia Ivankova</div>
+      <div class="popup-role">Executive Partners · AI Transformation</div>
+      <div class="popup-divider"></div>
+      <div class="popup-row"><span class="popup-row-icon">📞</span> +375 29 896 70 79</div>
+      <div class="popup-row"><span class="popup-row-icon">📱</span> +90 544 175 31 08</div>
+      <div class="popup-row"><span class="popup-row-icon">✉️</span> maryia.ivankova@gmail.com</div>
+      <div class="popup-row"><span class="popup-row-icon">✈️</span> @ivmaryia · Telegram</div>
+      <div class="popup-row"><span class="popup-row-icon">💬</span> +90 544 175 31 08 · WhatsApp</div>
+      <button class="popup-close" onclick="closePopup()">Close</button>
+    </div>
+
   </div>
 </div>
 
@@ -416,13 +437,18 @@ function saveContact() {
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 
+  document.getElementById('step1').style.display = 'block';
+  document.getElementById('step2').style.display = 'none';
   document.getElementById('overlay').classList.add('show');
 }
 
-function closePopup(e) {
-  if (!e || e.target === document.getElementById('overlay') || e.currentTarget === null) {
-    document.getElementById('overlay').classList.remove('show');
-  }
+function showStep2() {
+  document.getElementById('step1').style.display = 'none';
+  document.getElementById('step2').style.display = 'block';
+}
+
+function closePopup() {
+  document.getElementById('overlay').classList.remove('show');
 }
 </script>
 
