@@ -186,9 +186,120 @@
     color: rgba(255,255,255,0.45);
     margin-top: 16px;
   }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+
+  .contact-card-popup {
+    background: #fff;
+    border-radius: 24px;
+    padding: 28px 24px 24px;
+    width: 100%;
+    max-width: 380px;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .popup-check {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F96167, #FF69B4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 14px;
+  }
+
+  .popup-saved {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #F96167;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+
+  .popup-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 4px;
+  }
+
+  .popup-role {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 18px;
+  }
+
+  .popup-divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 0 0 16px;
+  }
+
+  .popup-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #333;
+  }
+
+  .popup-row-icon {
+    font-size: 18px;
+    width: 28px;
+    text-align: center;
+  }
+
+  .popup-close {
+    display: block;
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    background: linear-gradient(135deg, #F96167, #FF69B4);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
+
+<div class="overlay" id="overlay" onclick="closePopup(event)">
+  <div class="contact-card-popup">
+    <div class="popup-check">✓</div>
+    <div class="popup-saved">Контакт сохранён</div>
+    <div class="popup-name">Maryia Ivankova</div>
+    <div class="popup-role">Executive Partners · AI Transformation</div>
+    <div class="popup-divider"></div>
+    <div class="popup-row"><span class="popup-row-icon">📞</span> +375 29 896 70 79</div>
+    <div class="popup-row"><span class="popup-row-icon">📱</span> +90 544 175 31 08</div>
+    <div class="popup-row"><span class="popup-row-icon">✉️</span> maryia.ivankova@gmail.com</div>
+    <div class="popup-row"><span class="popup-row-icon">✈️</span> @ivmaryia · Telegram</div>
+    <button class="popup-close" onclick="closePopup()">Готово</button>
+  </div>
+</div>
 
 <div class="card">
   <div class="avatar">MI</div>
@@ -277,7 +388,6 @@ new QRCode(document.getElementById("qrcode"), {
   correctLevel: QRCode.CorrectLevel.M
 });
 
-// vCard generator
 function saveContact() {
   const vcard = [
     'BEGIN:VCARD',
@@ -298,26 +408,20 @@ function saveContact() {
 
   const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8' });
   const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'Maryia_Ivankova.vcf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-  // iOS Safari needs a different approach
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  document.getElementById('overlay').classList.add('show');
+}
 
-  if (isIOS) {
-    // On iOS, open in new tab — Safari handles .vcf natively
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Maryia_Ivankova.vcf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  } else {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Maryia_Ivankova.vcf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+function closePopup(e) {
+  if (!e || e.target === document.getElementById('overlay') || e.currentTarget === null) {
+    document.getElementById('overlay').classList.remove('show');
   }
 }
 </script>
