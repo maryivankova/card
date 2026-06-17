@@ -164,95 +164,12 @@
     margin: -10px 0 16px;
   }
 
-  .btn-open-contacts {
-    display: none;
-    width: 100%;
-    padding: 12px;
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 14px;
-    font-size: 14px;
-    font-weight: 600;
-    text-decoration: none;
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  .btn-open-contacts.show {
+  .small-link {
     display: block;
-  }
-
-  .open-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.55);
-    z-index: 200;
-    align-items: flex-end;
-    justify-content: center;
-    padding: 20px;
-  }
-
-  .open-overlay.show {
-    display: flex;
-  }
-
-  .open-popup {
-    background: linear-gradient(135deg, #F96167 0%, #F9617A 30%, #E8508A 60%, #FF69B4 100%);
-    border-radius: 24px;
-    padding: 28px 24px 24px;
-    width: 100%;
-    max-width: 380px;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
-    animation: slideUp 0.3s ease;
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(60px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-
-  .open-icon {
-    font-size: 32px;
-    margin-bottom: 8px;
-  }
-
-  .open-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 6px;
-  }
-
-  .open-text {
-    font-size: 13px;
-    color: rgba(255,255,255,0.85);
-    margin-bottom: 20px;
-  }
-
-  .btn-open-file {
-    display: block;
-    width: 100%;
-    padding: 16px;
-    background: #fff;
-    color: #F96167;
-    border: none;
-    border-radius: 16px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-bottom: 12px;
-  }
-
-  .open-close {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.8);
-    font-size: 13px;
-    cursor: pointer;
-    padding: 6px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    text-decoration: underline;
+    margin: -8px 0 20px;
   }
 
   .qr-section {
@@ -350,26 +267,13 @@
   <a class="btn-save" id="saveContactBtn" href="Maryia_Ivankova.vcf">
     💾 Save Contact
   </a>
-  <div class="save-hint">Tap "Open" → choose "Contacts" → "Import"</div>
-
-  <a class="btn-open-contacts" id="openContactsBtn" href="intent://#Intent;category=android.intent.category.APP_CONTACTS;end">
-    📇 Open Contacts
-  </a>
+  <div class="save-hint">Open the contact file and tap Add Contact.</div>
+  <a class="small-link" href="Maryia_Ivankova.vcf">Download vCard manually</a>
 
   <div class="qr-section">
     <div class="qr-label">Scan to open on another device</div>
     <div id="qrcode"></div>
     <div class="footer-text">Executive Partners · AI Transformation | Process Excellence</div>
-  </div>
-</div>
-
-<div class="open-overlay" id="openOverlay">
-  <div class="open-popup">
-    <div class="open-icon">📇</div>
-    <div class="open-title">Contact file downloaded</div>
-    <div class="open-text" id="openText">Tap below to open it and add to your contacts. This stays here — no need to dig through Files.</div>
-    <button class="btn-open-file" id="openFileBtn">📂 Open Contact File</button>
-    <button class="open-close" id="closeOpenOverlay">Close</button>
   </div>
 </div>
 
@@ -389,77 +293,38 @@ new QRCode(document.getElementById("qrcode"), {
   correctLevel: QRCode.CorrectLevel.M
 });
 
-if (/Android/.test(navigator.userAgent)) {
-  document.getElementById('openContactsBtn').classList.add('show');
+// On Android, skip the .vcf file entirely and hand the contact fields
+// straight to the Contacts app's own "create contact" screen via an
+// INSERT intent — there's no file to download, so there's nothing for
+// Chrome to ask "Download again?" about. iOS has no equivalent intent
+// system, so it keeps using the vCard link.
+const saveBtn = document.getElementById('saveContactBtn');
+const hint = document.querySelector('.save-hint');
+
+function buildAndroidContactIntent() {
+  const e = encodeURIComponent;
+  const fallback = e('https://maryivankova.github.io/card/Maryia_Ivankova.vcf');
+
+  return [
+    'intent://add-contact/#Intent',
+    'action=android.intent.action.INSERT',
+    'type=vnd.android.cursor.dir/raw_contact',
+    `S.name=${e('Maryia Ivankova')}`,
+    `S.phone=${e('+375298967079')}`,
+    `S.secondary_phone=${e('+905441753108')}`,
+    `S.email=${e('maryia.ivankova@gmail.com')}`,
+    `S.company=${e('Executive Partners')}`,
+    `S.job_title=${e('AI Transformation | Process Excellence')}`,
+    `S.notes=${e('Telegram: @ivmaryia\nWhatsApp: +90 544 175 31 08\nExecutive Partners | AI Transformation')}`,
+    `S.browser_fallback_url=${fallback}`,
+    'end'
+  ].join(';');
 }
 
-// Where supported, share the vCard directly so the OS "Open with" sheet
-// appears on tap instead of going through a download notification.
-const saveContactBtn = document.getElementById('saveContactBtn');
-const openOverlay = document.getElementById('openOverlay');
-const canShareFiles = navigator.share && navigator.canShare &&
-  navigator.canShare({ files: [new File([''], 'x.vcf', { type: 'text/vcard' })] });
-
-// Pre-fetch the vCard on load so the share call below can fire
-// synchronously inside the click handler — any await before it
-// breaks the "user activation" Chrome/Safari require for sharing.
-let vcardFile = null;
-fetch(saveContactBtn.href)
-  .then(res => res.blob())
-  .then(blob => { vcardFile = new File([blob], 'Maryia_Ivankova.vcf', { type: 'text/vcard' }); })
-  .catch(() => {});
-
-const openFileBtn = document.getElementById('openFileBtn');
-const openText = document.getElementById('openText');
-
-// Re-running the download would just trigger Chrome's "Download again?"
-// prompt in a loop. The only real "open" action lives in Chrome's own UI
-// (the download notification or the ⬇ icon by the address bar) — once we
-// know sharing isn't actually working on this device, stop offering a
-// button that can't do anything useful and point there instead.
-function fallBackToManualOpen() {
-  openFileBtn.style.display = 'none';
-  openText.textContent = 'Tap "Open" in the download notification, or the ⬇ icon next to the address bar, then choose Contacts.';
+if (/Android/i.test(navigator.userAgent)) {
+  saveBtn.href = buildAndroidContactIntent();
+  hint.textContent = 'Contact form will open — tap Save in Contacts.';
 }
-
-if (!canShareFiles) {
-  fallBackToManualOpen();
-}
-
-// The actual file download must only ever happen once per page load —
-// every repeat tap (whether on the main button or the popup's retry
-// button) re-navigating to the same .vcf just makes Chrome ask
-// "Download again?" forever instead of opening anything.
-let downloadStarted = false;
-
-function triggerSave() {
-  if (canShareFiles && vcardFile) {
-    navigator.share({ files: [vcardFile] }).catch(err => {
-      if (err.name === 'AbortError') return;
-      fallBackToManualOpen();
-      if (!downloadStarted) {
-        downloadStarted = true;
-        window.location.href = saveContactBtn.href;
-      }
-    });
-  } else if (!downloadStarted) {
-    downloadStarted = true;
-    window.location.href = saveContactBtn.href;
-  } else {
-    fallBackToManualOpen();
-  }
-}
-
-saveContactBtn.addEventListener('click', function (e) {
-  e.preventDefault();
-  triggerSave();
-  openOverlay.classList.add('show');
-});
-
-openFileBtn.addEventListener('click', triggerSave);
-document.getElementById('closeOpenOverlay').addEventListener('click', function () {
-  openOverlay.classList.remove('show');
-});
 </script>
 
 </body>
