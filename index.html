@@ -268,13 +268,24 @@
     💾 Save Contact
   </a>
   <div class="save-hint">Open the contact file and tap Add Contact.</div>
-  <a class="small-link" href="Maryia_Ivankova.vcf">Download vCard manually</a>
+  <a class="small-link" href="Maryia_Ivankova.vcf">Если форма не открылась — скачать vCard вручную</a>
 
   <div class="qr-section">
     <div class="qr-label">Scan to open on another device</div>
     <div id="qrcode"></div>
     <div class="footer-text">Executive Partners · AI Transformation | Process Excellence</div>
   </div>
+</div>
+
+<!-- DEBUG: temporary, remove once we know which intent variant actually
+     opens the Contacts create-contact screen on the test device. -->
+<div class="card" id="debugCard" style="margin-top:16px;">
+  <div class="footer-text" style="margin:0 0 12px;">DEBUG — intent variants (remove after testing)</div>
+  <a class="small-link" style="display:block;margin-bottom:14px;" id="debugA" href="#">Test Intent A (raw_contact, no package)</a>
+  <a class="small-link" style="display:block;margin-bottom:14px;" id="debugB" href="#">Test Intent B (contact, no package)</a>
+  <a class="small-link" style="display:block;margin-bottom:14px;" id="debugC" href="#">Test Samsung Intent</a>
+  <a class="small-link" style="display:block;margin-bottom:14px;" id="debugD" href="#">Test Google Contacts Intent</a>
+  <a class="small-link" style="display:block;margin-bottom:0;" href="Maryia_Ivankova.vcf">Download vCard manually</a>
 </div>
 
 <script>
@@ -295,35 +306,36 @@ new QRCode(document.getElementById("qrcode"), {
 
 // On Android, skip the .vcf file entirely and hand the contact fields
 // straight to the Contacts app's own "create contact" screen via an
-// INSERT intent — there's no file to download, so there's nothing for
-// Chrome to ask "Download again?" about. iOS has no equivalent intent
-// system, so it keeps using the vCard link.
+// INSERT intent — there's no file involved, so there's nothing for Chrome
+// to download or ask "Download again?" about. No browser_fallback_url:
+// that's what was silently dropping back to the .vcf download whenever
+// the intent wasn't recognized, masking the real failure. iOS has no
+// equivalent intent system, so it keeps using the plain vCard link.
 const saveBtn = document.getElementById('saveContactBtn');
 const hint = document.querySelector('.save-hint');
 
-function buildAndroidContactIntent() {
-  const e = encodeURIComponent;
-  const fallback = e('https://maryivankova.github.io/card/Maryia_Ivankova.vcf');
+// Variant A: generic raw_contact INSERT, no package — main button.
+const intentA = 'intent://contacts/#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;S.name=Maryia%20Ivankova;S.phone=%2B375298967079;S.secondary_phone=%2B905441753108;S.email=maryia.ivankova%40gmail.com;S.company=Executive%20Partners;S.job_title=AI%20Transformation%20%7C%20Process%20Excellence;S.notes=Telegram%3A%20%40ivmaryia%0AWhatsApp%3A%20%2B90%20544%20175%2031%2008;end';
 
-  return [
-    'intent://add-contact/#Intent',
-    'action=android.intent.action.INSERT',
-    'type=vnd.android.cursor.dir/raw_contact',
-    `S.name=${e('Maryia Ivankova')}`,
-    `S.phone=${e('+375298967079')}`,
-    `S.secondary_phone=${e('+905441753108')}`,
-    `S.email=${e('maryia.ivankova@gmail.com')}`,
-    `S.company=${e('Executive Partners')}`,
-    `S.job_title=${e('AI Transformation | Process Excellence')}`,
-    `S.notes=${e('Telegram: @ivmaryia\nWhatsApp: +90 544 175 31 08\nExecutive Partners | AI Transformation')}`,
-    `S.browser_fallback_url=${fallback}`,
-    'end'
-  ].join(';');
-}
+// Variant B: generic contact INSERT, no package.
+const intentB = 'intent://contacts/#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=Maryia%20Ivankova;S.phone=%2B375298967079;S.secondary_phone=%2B905441753108;S.email=maryia.ivankova%40gmail.com;S.company=Executive%20Partners;S.job_title=AI%20Transformation%20%7C%20Process%20Excellence;S.notes=Telegram%3A%20%40ivmaryia%0AWhatsApp%3A%20%2B90%20544%20175%2031%2008;end';
+
+// Variant C: Samsung Contacts package, raw_contact INSERT.
+const intentC = 'intent://contacts/#Intent;package=com.samsung.android.app.contacts;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;S.name=Maryia%20Ivankova;S.phone=%2B375298967079;S.secondary_phone=%2B905441753108;S.email=maryia.ivankova%40gmail.com;S.company=Executive%20Partners;S.job_title=AI%20Transformation%20%7C%20Process%20Excellence;S.notes=Telegram%3A%20%40ivmaryia%0AWhatsApp%3A%20%2B90%20544%20175%2031%2008;end';
+
+// Variant D: Google Contacts package, raw_contact INSERT.
+const intentD = 'intent://contacts/#Intent;package=com.google.android.contacts;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;S.name=Maryia%20Ivankova;S.phone=%2B375298967079;S.secondary_phone=%2B905441753108;S.email=maryia.ivankova%40gmail.com;S.company=Executive%20Partners;S.job_title=AI%20Transformation%20%7C%20Process%20Excellence;S.notes=Telegram%3A%20%40ivmaryia%0AWhatsApp%3A%20%2B90%20544%20175%2031%2008;end';
 
 if (/Android/i.test(navigator.userAgent)) {
-  saveBtn.href = buildAndroidContactIntent();
-  hint.textContent = 'Contact form will open — tap Save in Contacts.';
+  saveBtn.href = intentA;
+  hint.textContent = 'Откроется карточка контакта — проверьте данные и нажмите «Сохранить».';
+
+  document.getElementById('debugA').href = intentA;
+  document.getElementById('debugB').href = intentB;
+  document.getElementById('debugC').href = intentC;
+  document.getElementById('debugD').href = intentD;
+} else {
+  document.getElementById('debugCard').style.display = 'none';
 }
 </script>
 
