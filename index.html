@@ -339,6 +339,7 @@
 <div class="overlay-guide" id="downloadGuide">
   <div class="guide-arrow">↑</div>
   <div class="guide-msg">Tap "Open" above</div>
+  <div id="debugState" style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:30px;"></div>
 </div>
 
 <div class="overlay-guide" id="successScreen">
@@ -386,10 +387,33 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
 // visibilitychange a given Android build actually fires.
 let saveFlowStarted = sessionStorage.getItem('contactSaveStarted') === '1';
 
+// TEMPORARY: visible event log so we can see on a real device, from a
+// screenshot, which lifecycle events actually fire and in what order —
+// remove this whole block once the detection is confirmed working.
+function debugLog(label) {
+  const log = JSON.parse(sessionStorage.getItem('debugEvents') || '[]');
+  log.push(label);
+  sessionStorage.setItem('debugEvents', JSON.stringify(log.slice(-10)));
+  renderDebug();
+}
+
+function renderDebug() {
+  const el = document.getElementById('debugState');
+  if (!el) return;
+  const started = sessionStorage.getItem('contactSaveStarted');
+  const left = sessionStorage.getItem('leftAfterSave');
+  const log = JSON.parse(sessionStorage.getItem('debugEvents') || '[]');
+  el.textContent = 'started=' + started + ' left=' + left + ' | ' + log.join(' > ');
+}
+
+renderDebug();
+
 saveBtn.addEventListener('click', function () {
   sessionStorage.setItem('contactSaveStarted', '1');
   sessionStorage.removeItem('leftAfterSave');
+  sessionStorage.removeItem('debugEvents');
   saveFlowStarted = true;
+  debugLog('click');
 
   setTimeout(() => {
     guide.classList.add('show');
@@ -416,25 +440,45 @@ function showSuccessIfReturned() {
   saveFlowStarted = false;
 }
 
-window.addEventListener('blur', markLeftAfterSave);
-window.addEventListener('pagehide', markLeftAfterSave);
+window.addEventListener('blur', function () {
+  debugLog('blur');
+  markLeftAfterSave();
+  renderDebug();
+});
+
+window.addEventListener('pagehide', function () {
+  debugLog('pagehide');
+  markLeftAfterSave();
+  renderDebug();
+});
 
 document.addEventListener('visibilitychange', function () {
+  debugLog('vis:' + document.visibilityState);
+
   if (document.visibilityState === 'hidden') {
     markLeftAfterSave();
   }
 
+  renderDebug();
+
   if (document.visibilityState === 'visible') {
     setTimeout(showSuccessIfReturned, 300);
+    setTimeout(renderDebug, 350);
   }
 });
 
 window.addEventListener('focus', function () {
+  debugLog('focus');
+  renderDebug();
   setTimeout(showSuccessIfReturned, 300);
+  setTimeout(renderDebug, 350);
 });
 
 window.addEventListener('pageshow', function () {
+  debugLog('pageshow');
+  renderDebug();
   setTimeout(showSuccessIfReturned, 300);
+  setTimeout(renderDebug, 350);
 });
 
 successDone.addEventListener('click', function () {
