@@ -183,6 +183,78 @@
     display: block;
   }
 
+  .open-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .open-overlay.show {
+    display: flex;
+  }
+
+  .open-popup {
+    background: linear-gradient(135deg, #F96167 0%, #F9617A 30%, #E8508A 60%, #FF69B4 100%);
+    border-radius: 24px;
+    padding: 28px 24px 24px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(60px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+
+  .open-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+  }
+
+  .open-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+
+  .open-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 20px;
+  }
+
+  .btn-open-file {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: #fff;
+    color: #F96167;
+    border: none;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 12px;
+  }
+
+  .open-close {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px;
+  }
+
   .qr-section {
     margin-top: 4px;
   }
@@ -291,6 +363,16 @@
   </div>
 </div>
 
+<div class="open-overlay" id="openOverlay">
+  <div class="open-popup">
+    <div class="open-icon">📇</div>
+    <div class="open-title">Contact file downloaded</div>
+    <div class="open-text">Tap below to open it and add to your contacts. This stays here — no need to dig through Files.</div>
+    <button class="btn-open-file" id="openFileBtn">📂 Open Contact File</button>
+    <button class="open-close" id="closeOpenOverlay">Close</button>
+  </div>
+</div>
+
 <script>
 // Generate QR code pointing to this page
 // When hosted, replace with actual URL
@@ -314,24 +396,41 @@ if (/Android/.test(navigator.userAgent)) {
 // Where supported, share the vCard directly so the OS "Open with" sheet
 // appears on tap instead of going through a download notification.
 const saveContactBtn = document.getElementById('saveContactBtn');
+const openOverlay = document.getElementById('openOverlay');
 const canShareFiles = navigator.share && navigator.canShare &&
   navigator.canShare({ files: [new File([''], 'x.vcf', { type: 'text/vcard' })] });
 
-if (canShareFiles) {
-  saveContactBtn.addEventListener('click', async function (e) {
-    e.preventDefault();
-    try {
-      const res = await fetch(saveContactBtn.href);
-      const blob = await res.blob();
-      const file = new File([blob], 'Maryia_Ivankova.vcf', { type: 'text/vcard' });
-      await navigator.share({ files: [file] });
-    } catch (err) {
+// Pre-fetch the vCard on load so the share call below can fire
+// synchronously inside the click handler — any await before it
+// breaks the "user activation" Chrome/Safari require for sharing.
+let vcardFile = null;
+fetch(saveContactBtn.href)
+  .then(res => res.blob())
+  .then(blob => { vcardFile = new File([blob], 'Maryia_Ivankova.vcf', { type: 'text/vcard' }); })
+  .catch(() => {});
+
+function triggerSave() {
+  if (canShareFiles && vcardFile) {
+    navigator.share({ files: [vcardFile] }).catch(err => {
       if (err.name !== 'AbortError') {
         window.location.href = saveContactBtn.href;
       }
-    }
-  });
+    });
+  } else {
+    window.location.href = saveContactBtn.href;
+  }
 }
+
+saveContactBtn.addEventListener('click', function (e) {
+  e.preventDefault();
+  triggerSave();
+  openOverlay.classList.add('show');
+});
+
+document.getElementById('openFileBtn').addEventListener('click', triggerSave);
+document.getElementById('closeOpenOverlay').addEventListener('click', function () {
+  openOverlay.classList.remove('show');
+});
 </script>
 
 </body>
