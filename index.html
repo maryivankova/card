@@ -172,6 +172,73 @@
     margin: -8px 0 20px;
   }
 
+  .download-guide {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 200;
+    flex-direction: column;
+    align-items: center;
+    padding: 70px 20px 20px;
+  }
+
+  .download-guide.show {
+    display: flex;
+  }
+
+  .guide-arrow {
+    font-size: 48px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 8px;
+    text-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  }
+
+  .guide-card {
+    background: linear-gradient(135deg, #F96167 0%, #F9617A 30%, #E8508A 60%, #FF69B4 100%);
+    border-radius: 24px;
+    padding: 28px 24px 24px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+
+  .guide-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  .guide-text {
+    font-size: 14px;
+    color: rgba(255,255,255,0.95);
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+
+  .guide-small {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 20px;
+  }
+
+  .guide-close {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #fff;
+    color: #F96167;
+    border: none;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
   .qr-section {
     margin-top: 4px;
   }
@@ -265,10 +332,9 @@
   </div>
 
   <a class="btn-save" id="saveContactBtn" href="Maryia_Ivankova.vcf">
-    💾 Save Contact
+    📇 Добавить контакт
   </a>
-  <div class="save-hint">Open the contact file and tap Add Contact.</div>
-  <a class="small-link" href="Maryia_Ivankova.vcf">Если форма не открылась — скачать vCard вручную</a>
+  <div class="save-hint" id="saveHint">После скачивания нажмите «Открыть» в верхнем уведомлении Chrome.</div>
 
   <div class="qr-section">
     <div class="qr-label">Scan to open on another device</div>
@@ -277,15 +343,19 @@
   </div>
 </div>
 
-<!-- DEBUG: temporary, remove once we know which intent variant actually
-     opens the Contacts create-contact screen on the test device. -->
-<div class="card" id="debugCard" style="margin-top:16px;">
-  <div class="footer-text" style="margin:0 0 12px;">DEBUG — intent variants (remove after testing)</div>
-  <a class="small-link" style="display:block;margin-bottom:14px;" id="debugA" href="#">Test Intent A (raw_contact, no package)</a>
-  <a class="small-link" style="display:block;margin-bottom:14px;" id="debugB" href="#">Test Intent B (contact, no package)</a>
-  <a class="small-link" style="display:block;margin-bottom:14px;" id="debugC" href="#">Test Samsung Intent</a>
-  <a class="small-link" style="display:block;margin-bottom:14px;" id="debugD" href="#">Test Google Contacts Intent</a>
-  <a class="small-link" style="display:block;margin-bottom:0;" href="Maryia_Ivankova.vcf">Download vCard manually</a>
+<div class="download-guide" id="downloadGuide">
+  <div class="guide-arrow">↑</div>
+  <div class="guide-card">
+    <div class="guide-title">Файл контакта скачан</div>
+    <div class="guide-text">
+      Нажмите <b>«Открыть»</b> в верхнем уведомлении Chrome.
+      Затем выберите <b>«Контакты»</b> и подтвердите импорт.
+    </div>
+    <div class="guide-small">
+      Если уведомление исчезло — нажмите значок загрузок рядом с адресной строкой.
+    </div>
+    <button class="guide-close" id="guideClose">Понятно</button>
+  </div>
 </div>
 
 <script>
@@ -304,39 +374,29 @@ new QRCode(document.getElementById("qrcode"), {
   correctLevel: QRCode.CorrectLevel.M
 });
 
-// On Android, skip the .vcf file entirely and hand the contact fields
-// straight to the Contacts app's own "create contact" screen via an
-// INSERT intent — there's no file involved, so there's nothing for Chrome
-// to download or ask "Download again?" about. No browser_fallback_url:
-// that's what was silently dropping back to the .vcf download whenever
-// the intent wasn't recognized, masking the real failure. iOS has no
-// equivalent intent system, so it keeps using the plain vCard link.
+// The button does a plain, unintercepted download of the .vcf — that
+// part already works. The only thing that doesn't work is opening the
+// downloaded file programmatically (no web API can do that), so instead
+// of faking a button for it, we just point at Chrome's own "Open" in
+// the download notification and leave the guide on screen until the
+// user dismisses it themselves.
 const saveBtn = document.getElementById('saveContactBtn');
-const hint = document.querySelector('.save-hint');
+const guide = document.getElementById('downloadGuide');
+const closeBtn = document.getElementById('guideClose');
 
-// Variant A: generic raw_contact INSERT, no package — main button.
-const intentA = 'intent://contacts/#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;S.name=Maryia%20Ivankova;S.phone=%2B375298967079;S.secondary_phone=%2B905441753108;S.email=maryia.ivankova%40gmail.com;S.company=Executive%20Partners;S.job_title=AI%20Transformation%20%7C%20Process%20Excellence;S.notes=Telegram%3A%20%40ivmaryia%0AWhatsApp%3A%20%2B90%20544%20175%2031%2008;end';
-
-// Variant B: generic contact INSERT, no package.
-const intentB = 'intent://contacts/#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=Maryia%20Ivankova;S.phone=%2B375298967079;S.secondary_phone=%2B905441753108;S.email=maryia.ivankova%40gmail.com;S.company=Executive%20Partners;S.job_title=AI%20Transformation%20%7C%20Process%20Excellence;S.notes=Telegram%3A%20%40ivmaryia%0AWhatsApp%3A%20%2B90%20544%20175%2031%2008;end';
-
-// Variant C: Samsung Contacts package, raw_contact INSERT.
-const intentC = 'intent://contacts/#Intent;package=com.samsung.android.app.contacts;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;S.name=Maryia%20Ivankova;S.phone=%2B375298967079;S.secondary_phone=%2B905441753108;S.email=maryia.ivankova%40gmail.com;S.company=Executive%20Partners;S.job_title=AI%20Transformation%20%7C%20Process%20Excellence;S.notes=Telegram%3A%20%40ivmaryia%0AWhatsApp%3A%20%2B90%20544%20175%2031%2008;end';
-
-// Variant D: Google Contacts package, raw_contact INSERT.
-const intentD = 'intent://contacts/#Intent;package=com.google.android.contacts;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;S.name=Maryia%20Ivankova;S.phone=%2B375298967079;S.secondary_phone=%2B905441753108;S.email=maryia.ivankova%40gmail.com;S.company=Executive%20Partners;S.job_title=AI%20Transformation%20%7C%20Process%20Excellence;S.notes=Telegram%3A%20%40ivmaryia%0AWhatsApp%3A%20%2B90%20544%20175%2031%2008;end';
-
-if (/Android/i.test(navigator.userAgent)) {
-  saveBtn.href = intentA;
-  hint.textContent = 'Откроется карточка контакта — проверьте данные и нажмите «Сохранить».';
-
-  document.getElementById('debugA').href = intentA;
-  document.getElementById('debugB').href = intentB;
-  document.getElementById('debugC').href = intentC;
-  document.getElementById('debugD').href = intentD;
-} else {
-  document.getElementById('debugCard').style.display = 'none';
+if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+  document.getElementById('saveHint').textContent = 'Откройте скачанный контакт и нажмите Add Contact.';
 }
+
+saveBtn.addEventListener('click', function () {
+  setTimeout(() => {
+    guide.classList.add('show');
+  }, 400);
+});
+
+closeBtn.addEventListener('click', function () {
+  guide.classList.remove('show');
+});
 </script>
 
 </body>
