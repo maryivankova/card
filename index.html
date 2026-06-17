@@ -172,69 +172,61 @@
     margin: -8px 0 20px;
   }
 
-  .download-guide {
+  .overlay-guide {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.55);
+    background: rgba(0,0,0,0.6);
     z-index: 200;
     flex-direction: column;
     align-items: center;
-    padding: 70px 20px 20px;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 90px 20px 20px;
+    text-align: center;
   }
 
-  .download-guide.show {
+  .overlay-guide.show {
     display: flex;
   }
 
   .guide-arrow {
-    font-size: 48px;
+    font-size: 56px;
     font-weight: 700;
     color: #fff;
     line-height: 1;
-    margin-bottom: 8px;
-    text-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    animation: bounce 1.2s ease-in-out infinite;
   }
 
-  .guide-card {
-    background: linear-gradient(135deg, #F96167 0%, #F9617A 30%, #E8508A 60%, #FF69B4 100%);
-    border-radius: 24px;
-    padding: 28px 24px 24px;
-    width: 100%;
-    max-width: 380px;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-14px); }
   }
 
-  .guide-title {
-    font-size: 18px;
+  .guide-msg {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .success-title {
+    font-size: 22px;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 10px;
   }
 
-  .guide-text {
+  .success-subtitle {
     font-size: 14px;
-    color: rgba(255,255,255,0.95);
-    line-height: 1.5;
-    margin-bottom: 14px;
+    color: rgba(255,255,255,0.85);
   }
 
-  .guide-small {
-    font-size: 12px;
-    color: rgba(255,255,255,0.75);
-    margin-bottom: 20px;
-  }
-
-  .guide-close {
-    display: block;
-    width: 100%;
-    padding: 14px;
+  .guide-btn {
+    padding: 12px 28px;
     background: #fff;
     color: #F96167;
     border: none;
     border-radius: 14px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
   }
@@ -332,9 +324,10 @@
   </div>
 
   <a class="btn-save" id="saveContactBtn" href="Maryia_Ivankova.vcf">
-    📇 Добавить контакт
+    💾 Save Contact
   </a>
-  <div class="save-hint" id="saveHint">После скачивания нажмите «Открыть» в верхнем уведомлении Chrome.</div>
+  <div class="save-hint" id="saveHint">After download, tap "Open" above.</div>
+  <a class="small-link" href="Maryia_Ivankova.vcf">Download vCard manually</a>
 
   <div class="qr-section">
     <div class="qr-label">Scan to open on another device</div>
@@ -343,19 +336,16 @@
   </div>
 </div>
 
-<div class="download-guide" id="downloadGuide">
+<div class="overlay-guide" id="downloadGuide">
   <div class="guide-arrow">↑</div>
-  <div class="guide-card">
-    <div class="guide-title">Файл контакта скачан</div>
-    <div class="guide-text">
-      Нажмите <b>«Открыть»</b> в верхнем уведомлении Chrome.
-      Затем выберите <b>«Контакты»</b> и подтвердите импорт.
-    </div>
-    <div class="guide-small">
-      Если уведомление исчезло — нажмите значок загрузок рядом с адресной строкой.
-    </div>
-    <button class="guide-close" id="guideClose">Понятно</button>
-  </div>
+  <div class="guide-msg">Tap "Open" above</div>
+  <button class="guide-btn" id="guideClose">Got it</button>
+</div>
+
+<div class="overlay-guide" id="successScreen">
+  <div class="success-title">Contact saved</div>
+  <div class="success-subtitle">You can now close this page.</div>
+  <button class="guide-btn" id="successDone">Done</button>
 </div>
 
 <script>
@@ -376,26 +366,43 @@ new QRCode(document.getElementById("qrcode"), {
 
 // The button does a plain, unintercepted download of the .vcf — that
 // part already works. The only thing that doesn't work is opening the
-// downloaded file programmatically (no web API can do that), so instead
-// of faking a button for it, we just point at Chrome's own "Open" in
-// the download notification and leave the guide on screen until the
-// user dismisses it themselves.
+// downloaded file programmatically (no web API can do that), so we just
+// point at Chrome's own "Open" in the download notification.
 const saveBtn = document.getElementById('saveContactBtn');
 const guide = document.getElementById('downloadGuide');
-const closeBtn = document.getElementById('guideClose');
+const guideClose = document.getElementById('guideClose');
+const successScreen = document.getElementById('successScreen');
+const successDone = document.getElementById('successDone');
 
 if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-  document.getElementById('saveHint').textContent = 'Откройте скачанный контакт и нажмите Add Contact.';
+  document.getElementById('saveHint').textContent = 'Open the downloaded contact and tap Add Contact.';
 }
 
+let awaitingReturn = false;
+
 saveBtn.addEventListener('click', function () {
-  setTimeout(() => {
-    guide.classList.add('show');
-  }, 400);
+  setTimeout(() => guide.classList.add('show'), 400);
 });
 
-closeBtn.addEventListener('click', function () {
+guideClose.addEventListener('click', function () {
   guide.classList.remove('show');
+});
+
+successDone.addEventListener('click', function () {
+  successScreen.classList.remove('show');
+});
+
+// The site can't verify the contact was actually saved — leaving the
+// browser for the Contacts import flow and coming back is the closest
+// signal we get, so treat that as "done" and swap to the success screen.
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden' && guide.classList.contains('show')) {
+    awaitingReturn = true;
+  } else if (document.visibilityState === 'visible' && awaitingReturn) {
+    awaitingReturn = false;
+    guide.classList.remove('show');
+    successScreen.classList.add('show');
+  }
 });
 </script>
 
