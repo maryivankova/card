@@ -378,31 +378,67 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
   document.getElementById('saveHint').textContent = 'Open the downloaded contact and tap Add Contact.';
 }
 
-let awaitingReturn = false;
+// The site can't verify the contact was actually saved. The UX trade-off:
+// if the user started the save flow, left the browser (for the Contacts
+// import screen), and came back, treat that as "done" and show the
+// success screen. The flag lives in sessionStorage (not tied to the
+// guide's visibility) so it survives even if the user dismissed the
+// guide with "Got it" before switching apps, or if a particular Android
+// build skips straight to pagehide/pageshow instead of visibilitychange.
+let saveFlowStarted = sessionStorage.getItem('contactSaveStarted') === '1';
+let leftPageAfterSave = false;
 
 saveBtn.addEventListener('click', function () {
-  setTimeout(() => guide.classList.add('show'), 400);
+  sessionStorage.setItem('contactSaveStarted', '1');
+  saveFlowStarted = true;
+  leftPageAfterSave = false;
+
+  setTimeout(() => {
+    guide.classList.add('show');
+  }, 400);
 });
 
 guideClose.addEventListener('click', function () {
   guide.classList.remove('show');
 });
 
-successDone.addEventListener('click', function () {
-  successScreen.classList.remove('show');
+function showSuccessIfReturned() {
+  if (!saveFlowStarted || !leftPageAfterSave) return;
+
+  guide.classList.remove('show');
+  successScreen.classList.add('show');
+
+  sessionStorage.removeItem('contactSaveStarted');
+  saveFlowStarted = false;
+  leftPageAfterSave = false;
+}
+
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden' && saveFlowStarted) {
+    leftPageAfterSave = true;
+  }
+
+  if (document.visibilityState === 'visible') {
+    setTimeout(showSuccessIfReturned, 300);
+  }
 });
 
-// The site can't verify the contact was actually saved — leaving the
-// browser for the Contacts import flow and coming back is the closest
-// signal we get, so treat that as "done" and swap to the success screen.
-document.addEventListener('visibilitychange', function () {
-  if (document.visibilityState === 'hidden' && guide.classList.contains('show')) {
-    awaitingReturn = true;
-  } else if (document.visibilityState === 'visible' && awaitingReturn) {
-    awaitingReturn = false;
-    guide.classList.remove('show');
-    successScreen.classList.add('show');
+window.addEventListener('pagehide', function () {
+  if (saveFlowStarted) {
+    leftPageAfterSave = true;
   }
+});
+
+window.addEventListener('pageshow', function () {
+  setTimeout(showSuccessIfReturned, 300);
+});
+
+window.addEventListener('focus', function () {
+  setTimeout(showSuccessIfReturned, 300);
+});
+
+successDone.addEventListener('click', function () {
+  successScreen.classList.remove('show');
 });
 </script>
 
