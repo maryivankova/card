@@ -367,7 +367,7 @@
   <div class="open-popup">
     <div class="open-icon">📇</div>
     <div class="open-title">Contact file downloaded</div>
-    <div class="open-text">Tap below to open it and add to your contacts. This stays here — no need to dig through Files.</div>
+    <div class="open-text" id="openText">Tap below to open it and add to your contacts. This stays here — no need to dig through Files.</div>
     <button class="btn-open-file" id="openFileBtn">📂 Open Contact File</button>
     <button class="open-close" id="closeOpenOverlay">Close</button>
   </div>
@@ -421,13 +421,25 @@ function triggerSave() {
   }
 }
 
+const openFileBtn = document.getElementById('openFileBtn');
+const openText = document.getElementById('openText');
+
+if (!canShareFiles) {
+  // No Web Share support: re-running the download would just trigger
+  // Chrome's "Download again?" prompt in a loop. The only real "open"
+  // action lives in Chrome's own UI (the download notification or the
+  // ⬇ icon by the address bar) — point there instead of faking a button.
+  openFileBtn.style.display = 'none';
+  openText.textContent = 'Tap "Open" in the download notification, or the ⬇ icon next to the address bar, then choose Contacts.';
+}
+
 saveContactBtn.addEventListener('click', function (e) {
   e.preventDefault();
   triggerSave();
   openOverlay.classList.add('show');
 });
 
-document.getElementById('openFileBtn').addEventListener('click', triggerSave);
+openFileBtn.addEventListener('click', triggerSave);
 document.getElementById('closeOpenOverlay').addEventListener('click', function () {
   openOverlay.classList.remove('show');
 });
