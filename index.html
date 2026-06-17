@@ -158,6 +158,31 @@
     transform: translateY(0);
   }
 
+  .save-hint {
+    font-size: 12px;
+    color: rgba(255,255,255,0.75);
+    margin: -10px 0 16px;
+  }
+
+  .btn-open-contacts {
+    display: none;
+    width: 100%;
+    padding: 12px;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .btn-open-contacts.show {
+    display: block;
+  }
+
   .qr-section {
     margin-top: 4px;
   }
@@ -253,6 +278,11 @@
   <a class="btn-save" href="Maryia_Ivankova.vcf">
     💾 Save Contact
   </a>
+  <div class="save-hint">Tap "Open" → choose "Contacts" → "Import"</div>
+
+  <a class="btn-open-contacts" id="openContactsBtn" href="intent://#Intent;category=android.intent.category.APP_CONTACTS;end">
+    📇 Open Contacts
+  </a>
 
   <div class="qr-section">
     <div class="qr-label">Scan to open on another device</div>
@@ -276,6 +306,10 @@ new QRCode(document.getElementById("qrcode"), {
   colorLight: "#ffffff",
   correctLevel: QRCode.CorrectLevel.M
 });
+
+if (/Android/.test(navigator.userAgent)) {
+  document.getElementById('openContactsBtn').classList.add('show');
+}
 </script>
 
 </body>
