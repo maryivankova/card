@@ -426,31 +426,37 @@ if (!canShareFiles) {
   fallBackToManualOpen();
 }
 
-// isRetry: true when called from the popup's own button — in that case a
-// failed share must NOT fall back to (re-)downloading the file, since the
-// first tap already did that and a second download just reopens the
-// "Download again?" prompt forever.
-function triggerSave(isRetry) {
+// The actual file download must only ever happen once per page load —
+// every repeat tap (whether on the main button or the popup's retry
+// button) re-navigating to the same .vcf just makes Chrome ask
+// "Download again?" forever instead of opening anything.
+let downloadStarted = false;
+
+function triggerSave() {
   if (canShareFiles && vcardFile) {
     navigator.share({ files: [vcardFile] }).catch(err => {
       if (err.name === 'AbortError') return;
       fallBackToManualOpen();
-      if (!isRetry) {
+      if (!downloadStarted) {
+        downloadStarted = true;
         window.location.href = saveContactBtn.href;
       }
     });
-  } else if (!isRetry) {
+  } else if (!downloadStarted) {
+    downloadStarted = true;
     window.location.href = saveContactBtn.href;
+  } else {
+    fallBackToManualOpen();
   }
 }
 
 saveContactBtn.addEventListener('click', function (e) {
   e.preventDefault();
-  triggerSave(false);
+  triggerSave();
   openOverlay.classList.add('show');
 });
 
-openFileBtn.addEventListener('click', function () { triggerSave(true); });
+openFileBtn.addEventListener('click', triggerSave);
 document.getElementById('closeOpenOverlay').addEventListener('click', function () {
   openOverlay.classList.remove('show');
 });
