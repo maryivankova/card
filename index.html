@@ -409,37 +409,48 @@ fetch(saveContactBtn.href)
   .then(blob => { vcardFile = new File([blob], 'Maryia_Ivankova.vcf', { type: 'text/vcard' }); })
   .catch(() => {});
 
-function triggerSave() {
-  if (canShareFiles && vcardFile) {
-    navigator.share({ files: [vcardFile] }).catch(err => {
-      if (err.name !== 'AbortError') {
-        window.location.href = saveContactBtn.href;
-      }
-    });
-  } else {
-    window.location.href = saveContactBtn.href;
-  }
-}
-
 const openFileBtn = document.getElementById('openFileBtn');
 const openText = document.getElementById('openText');
 
-if (!canShareFiles) {
-  // No Web Share support: re-running the download would just trigger
-  // Chrome's "Download again?" prompt in a loop. The only real "open"
-  // action lives in Chrome's own UI (the download notification or the
-  // ⬇ icon by the address bar) — point there instead of faking a button.
+// Re-running the download would just trigger Chrome's "Download again?"
+// prompt in a loop. The only real "open" action lives in Chrome's own UI
+// (the download notification or the ⬇ icon by the address bar) — once we
+// know sharing isn't actually working on this device, stop offering a
+// button that can't do anything useful and point there instead.
+function fallBackToManualOpen() {
   openFileBtn.style.display = 'none';
   openText.textContent = 'Tap "Open" in the download notification, or the ⬇ icon next to the address bar, then choose Contacts.';
 }
 
+if (!canShareFiles) {
+  fallBackToManualOpen();
+}
+
+// isRetry: true when called from the popup's own button — in that case a
+// failed share must NOT fall back to (re-)downloading the file, since the
+// first tap already did that and a second download just reopens the
+// "Download again?" prompt forever.
+function triggerSave(isRetry) {
+  if (canShareFiles && vcardFile) {
+    navigator.share({ files: [vcardFile] }).catch(err => {
+      if (err.name === 'AbortError') return;
+      fallBackToManualOpen();
+      if (!isRetry) {
+        window.location.href = saveContactBtn.href;
+      }
+    });
+  } else if (!isRetry) {
+    window.location.href = saveContactBtn.href;
+  }
+}
+
 saveContactBtn.addEventListener('click', function (e) {
   e.preventDefault();
-  triggerSave();
+  triggerSave(false);
   openOverlay.classList.add('show');
 });
 
-openFileBtn.addEventListener('click', triggerSave);
+openFileBtn.addEventListener('click', function () { triggerSave(true); });
 document.getElementById('closeOpenOverlay').addEventListener('click', function () {
   openOverlay.classList.remove('show');
 });
