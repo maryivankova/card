@@ -339,7 +339,6 @@
 <div class="overlay-guide" id="downloadGuide">
   <div class="guide-arrow">↑</div>
   <div class="guide-msg">Tap "Open" above</div>
-  <button class="guide-btn" id="guideClose">Got it</button>
 </div>
 
 <div class="overlay-guide" id="successScreen">
@@ -367,10 +366,11 @@ new QRCode(document.getElementById("qrcode"), {
 // The button does a plain, unintercepted download of the .vcf — that
 // part already works. The only thing that doesn't work is opening the
 // downloaded file programmatically (no web API can do that), so we just
-// point at Chrome's own "Open" in the download notification.
+// point at Chrome's own "Open" in the download notification. The guide
+// has no dismiss button — it only ever goes away once we detect the user
+// left for the Contacts import flow and came back.
 const saveBtn = document.getElementById('saveContactBtn');
 const guide = document.getElementById('downloadGuide');
-const guideClose = document.getElementById('guideClose');
 const successScreen = document.getElementById('successScreen');
 const successDone = document.getElementById('successDone');
 
@@ -381,41 +381,47 @@ if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
 // The site can't verify the contact was actually saved. The UX trade-off:
 // if the user started the save flow, left the browser (for the Contacts
 // import screen), and came back, treat that as "done" and show the
-// success screen. The flag lives in sessionStorage (not tied to the
-// guide's visibility) so it survives even if the user dismissed the
-// guide with "Got it" before switching apps, or if a particular Android
-// build skips straight to pagehide/pageshow instead of visibilitychange.
+// success screen. Both flags live in sessionStorage — not just JS
+// variables — so they survive whichever combination of blur/pagehide/
+// visibilitychange a given Android build actually fires.
 let saveFlowStarted = sessionStorage.getItem('contactSaveStarted') === '1';
-let leftPageAfterSave = false;
 
 saveBtn.addEventListener('click', function () {
   sessionStorage.setItem('contactSaveStarted', '1');
+  sessionStorage.removeItem('leftAfterSave');
   saveFlowStarted = true;
-  leftPageAfterSave = false;
 
   setTimeout(() => {
     guide.classList.add('show');
-  }, 400);
+  }, 300);
 });
 
-guideClose.addEventListener('click', function () {
-  guide.classList.remove('show');
-});
+function markLeftAfterSave() {
+  if (saveFlowStarted || sessionStorage.getItem('contactSaveStarted') === '1') {
+    sessionStorage.setItem('leftAfterSave', '1');
+  }
+}
 
 function showSuccessIfReturned() {
-  if (!saveFlowStarted || !leftPageAfterSave) return;
+  const started = sessionStorage.getItem('contactSaveStarted') === '1';
+  const left = sessionStorage.getItem('leftAfterSave') === '1';
+
+  if (!started || !left) return;
 
   guide.classList.remove('show');
   successScreen.classList.add('show');
 
   sessionStorage.removeItem('contactSaveStarted');
+  sessionStorage.removeItem('leftAfterSave');
   saveFlowStarted = false;
-  leftPageAfterSave = false;
 }
 
+window.addEventListener('blur', markLeftAfterSave);
+window.addEventListener('pagehide', markLeftAfterSave);
+
 document.addEventListener('visibilitychange', function () {
-  if (document.visibilityState === 'hidden' && saveFlowStarted) {
-    leftPageAfterSave = true;
+  if (document.visibilityState === 'hidden') {
+    markLeftAfterSave();
   }
 
   if (document.visibilityState === 'visible') {
@@ -423,17 +429,11 @@ document.addEventListener('visibilitychange', function () {
   }
 });
 
-window.addEventListener('pagehide', function () {
-  if (saveFlowStarted) {
-    leftPageAfterSave = true;
-  }
-});
-
-window.addEventListener('pageshow', function () {
+window.addEventListener('focus', function () {
   setTimeout(showSuccessIfReturned, 300);
 });
 
-window.addEventListener('focus', function () {
+window.addEventListener('pageshow', function () {
   setTimeout(showSuccessIfReturned, 300);
 });
 
