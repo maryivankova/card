@@ -275,7 +275,7 @@
 
   </div>
 
-  <a class="btn-save" href="Maryia_Ivankova.vcf">
+  <a class="btn-save" id="saveContactBtn" href="Maryia_Ivankova.vcf">
     💾 Save Contact
   </a>
   <div class="save-hint">Tap "Open" → choose "Contacts" → "Import"</div>
@@ -309,6 +309,28 @@ new QRCode(document.getElementById("qrcode"), {
 
 if (/Android/.test(navigator.userAgent)) {
   document.getElementById('openContactsBtn').classList.add('show');
+}
+
+// Where supported, share the vCard directly so the OS "Open with" sheet
+// appears on tap instead of going through a download notification.
+const saveContactBtn = document.getElementById('saveContactBtn');
+const canShareFiles = navigator.share && navigator.canShare &&
+  navigator.canShare({ files: [new File([''], 'x.vcf', { type: 'text/vcard' })] });
+
+if (canShareFiles) {
+  saveContactBtn.addEventListener('click', async function (e) {
+    e.preventDefault();
+    try {
+      const res = await fetch(saveContactBtn.href);
+      const blob = await res.blob();
+      const file = new File([blob], 'Maryia_Ivankova.vcf', { type: 'text/vcard' });
+      await navigator.share({ files: [file] });
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        window.location.href = saveContactBtn.href;
+      }
+    }
+  });
 }
 </script>
 
